@@ -9,10 +9,10 @@ Run `composer install`
 Change username and password to your own
 
 ```php
-if (!$fbScraper->authenticate('USERNAME', 'PASWORD')) {
+if (!$fbScraper->authenticate('USERNAME', 'PASSWORD')) {
 ```
 
-After run `php src/console.php`
+After - run `php src/console.php`
 
 ## Caching
 
