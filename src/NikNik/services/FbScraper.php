@@ -13,13 +13,6 @@ use Symfony\Component\BrowserKit\CookieJar;
 class FbScraper
 {
     /**
-     * Goutte client
-     *
-     * @var Client
-     */
-    protected $client;
-
-    /**
      * Home page URI
      *
      * @var string
@@ -39,6 +32,13 @@ class FbScraper
      * @var string
      */
     const LOGIN_URI = 'https://www.facebook.com/login/';
+    
+    /**
+     * Goutte client
+     *
+     * @var Client
+     */
+    protected $client;
 
     /**
      * FbScraper constructor.
