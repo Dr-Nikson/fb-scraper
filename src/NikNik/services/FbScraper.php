@@ -64,9 +64,7 @@ class FbScraper
     {
         $loginPageResult = $this->request('GET', self::LOGIN_URI);
 
-        if ($this->checkResponseCode($loginPageResult->response)
-            && $loginPageResult->crawler->getUri() === self::SUCCESS_URI) {
-
+        if ($this->checkResponseCode($loginPageResult->response) && !$this->isLoginPage($loginPageResult)) {
             return true;
         }
 
@@ -75,8 +73,7 @@ class FbScraper
 
         $submitResult = $this->submit($loginForm, $authData);
 
-        return $this->checkResponseCode($submitResult->response)
-            && strpos($submitResult->crawler->getUri(), '/login') === false;
+        return $this->checkResponseCode($submitResult->response) && !$this->isLoginPage($submitResult);
     }
 
     /**
@@ -188,5 +185,14 @@ class FbScraper
     protected function isUsername($username)
     {
         return preg_match('/^[^\/\?]*$/', $username) === 1;
+    }
+
+    /**
+     * @param $submitResult
+     * @return bool
+     */
+    protected function isLoginPage($submitResult)
+    {
+        return strpos($submitResult->crawler->getUri(), '/login') !== false;
     }
 }
