@@ -5,6 +5,7 @@ namespace NikNik\services;
 
 use Goutte\Client;
 use Symfony\Component\BrowserKit\CookieJar;
+use Symfony\Component\DomCrawler\Form;
 
 /**
  * Class FbScraper
@@ -61,18 +62,21 @@ class FbScraper
      */
     public function authenticate($email, $pass)
     {
-        $loginPageCrawler = $this->client->request('GET', self::LOGIN_URI);
+        $loginPageResult = $this->request('GET', self::LOGIN_URI);
 
-        if ($this->checkResponseCode() && $loginPageCrawler->getUri() === self::SUCCESS_URI) {
+        if ($this->checkResponseCode($loginPageResult->response)
+            && $loginPageResult->crawler->getUri() === self::SUCCESS_URI) {
+
             return true;
         }
 
-        $loginForm = $loginPageCrawler->filter('#loginbutton')->first()->form();
+        $loginForm = $loginPageResult->crawler->filter('#loginbutton')->first()->form();
         $authData = array('email' => $email, 'pass' => $pass);
 
-        $resultCrawler = $this->client->submit($loginForm, $authData);
+        $submitResult = $this->submit($loginForm, $authData);
 
-        return $this->checkResponseCode() && $resultCrawler->getUri() === self::SUCCESS_URI;
+        return $this->checkResponseCode($submitResult->response)
+            && $submitResult->crawler->getUri() === self::SUCCESS_URI;
     }
 
     /**
@@ -87,10 +91,10 @@ class FbScraper
      */
     public function getUsername($id)
     {
-        $pageCrawler =  $this->client->request('GET', self::FB_HOME . $id);
-        $username = str_replace(self::FB_HOME, '', $pageCrawler->getUri());
+        $pageResult =  $this->request('GET', self::FB_HOME . $id);
+        $username = str_replace(self::FB_HOME, '', $pageResult->crawler->getUri());
 
-        if (!$this->checkResponseCode() || !$this->isUsername($username)) {
+        if (!$this->checkResponseCode($pageResult->response) || !$this->isUsername($username)) {
             throw new \Exception('Error happens');
         }
 
@@ -119,19 +123,57 @@ class FbScraper
      * @return bool
      */
     public function checkAuth() {
-        $loginPageCrawler = $this->client->request('GET', 'https://www.facebook.com/login/');
+        $loginPageResult = $this->request('GET', 'https://www.facebook.com/login/');
 
-        return $this->checkResponseCode() && $loginPageCrawler->getUri() === self::SUCCESS_URI;
+        return $this->checkResponseCode($loginPageResult->response)
+            && $loginPageResult->crawler->getUri() === self::SUCCESS_URI;
+    }
+
+    /**
+     * @param $method
+     * @param $uri
+     * @param array $parameters
+     * @param array $files
+     * @param array $server
+     * @param null $content
+     * @param bool $changeHistory
+     * @return FbRequestResult
+     * @internal param array ...$params
+     */
+    protected function request(
+        $method, $uri, $parameters = array(),
+        $files = array(), $server = array(), $content = null, $changeHistory = true)
+    {
+        $crawler = $this->client->request($method, $uri, $parameters, $files, $server, $content, $changeHistory);
+        $response = $this->client->getResponse();
+
+        return new FbRequestResult($crawler, $response);
+    }
+
+
+    /**
+     * @param Form $form
+     * @param array $values
+     * @return FbRequestResult
+     * @internal param array ...$params
+     */
+    protected function submit($form, $values = array())
+    {
+        $crawler =  $this->client->submit($form, $values);
+        $response = $this->client->getResponse();
+
+        return new FbRequestResult($crawler, $response);
     }
 
     /**
      * Checks response code
      *
+     * @param $lastResponse
      * @param int $target
      * @return bool
      */
-    protected function checkResponseCode($target = 200) {
-        $lastResponse = $this->client->getResponse();
+    protected function checkResponseCode($lastResponse, $target = 200) {
+//        $lastResponse = $this->client->getResponse();
 
         return (int) $lastResponse->getStatus() === $target;
     }
