@@ -76,7 +76,7 @@ class FbScraper
         $submitResult = $this->submit($loginForm, $authData);
 
         return $this->checkResponseCode($submitResult->response)
-            && $submitResult->crawler->getUri() === self::SUCCESS_URI;
+            && strpos($submitResult->crawler->getUri(), '/login') === false;
     }
 
     /**
