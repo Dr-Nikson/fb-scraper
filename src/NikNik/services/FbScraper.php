@@ -17,7 +17,7 @@ class FbScraper
      *
      * @var Client
      */
-    public $client;
+    protected $client;
 
     /**
      * Home page URI
