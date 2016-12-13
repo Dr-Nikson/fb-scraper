@@ -4,7 +4,7 @@ This is scraper example. Allows to get username by id from facebook.
 
 ## Installation
 
-Run `composer init`
+Run `composer install`
 
 Change username and password to your own
 
