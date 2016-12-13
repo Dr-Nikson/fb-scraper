@@ -21,13 +21,6 @@ class FbScraper
     const FB_HOME = 'https://www.facebook.com/';
 
     /**
-     * Success page URI
-     *
-     * @var string
-     */
-    const SUCCESS_URI = FbScraper::FB_HOME;
-
-    /**
      * Login page URI
      *
      * @var string
@@ -64,7 +57,7 @@ class FbScraper
     {
         $loginPageResult = $this->request('GET', self::LOGIN_URI);
 
-        if ($this->checkResponseCode($loginPageResult->response) && !$this->isLoginPage($loginPageResult)) {
+        if (!$this->isLoginPage($loginPageResult)) {
             return true;
         }
 
@@ -73,7 +66,7 @@ class FbScraper
 
         $submitResult = $this->submit($loginForm, $authData);
 
-        return $this->checkResponseCode($submitResult->response) && !$this->isLoginPage($submitResult);
+        return !$this->isLoginPage($submitResult);
     }
 
     /**
@@ -122,8 +115,7 @@ class FbScraper
     public function checkAuth() {
         $loginPageResult = $this->request('GET', 'https://www.facebook.com/login/');
 
-        return $this->checkResponseCode($loginPageResult->response)
-            && $loginPageResult->crawler->getUri() === self::SUCCESS_URI;
+        return !$this->isLoginPage($loginPageResult);
     }
 
     /**
@@ -135,7 +127,6 @@ class FbScraper
      * @param null $content
      * @param bool $changeHistory
      * @return FbRequestResult
-     * @internal param array ...$params
      */
     protected function request(
         $method, $uri, $parameters = array(),
@@ -152,7 +143,6 @@ class FbScraper
      * @param Form $form
      * @param array $values
      * @return FbRequestResult
-     * @internal param array ...$params
      */
     protected function submit($form, $values = array())
     {
@@ -191,8 +181,17 @@ class FbScraper
      * @param $submitResult
      * @return bool
      */
-    protected function isLoginPage($submitResult)
+    protected function isLoginUri($submitResult)
     {
         return strpos($submitResult->crawler->getUri(), '/login') !== false;
+    }
+
+    /**
+     * @param FbRequestResult $loginPageResult
+     * @return bool
+     */
+    protected function isLoginPage(FbRequestResult $loginPageResult)
+    {
+        return !$this->checkResponseCode($loginPageResult->response) || $this->isLoginUri($loginPageResult);
     }
 }
