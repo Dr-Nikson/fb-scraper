@@ -12,4 +12,4 @@ Change username and password to your own
 if (!$fbScraper->authenticate('USERNAME', 'PASWORD')) {
 ```
 
-After run `php srs/console.php`
+After run `php src/console.php`
