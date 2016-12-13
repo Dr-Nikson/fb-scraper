@@ -62,4 +62,5 @@ fabric.properties
 # composer.lock
 
 /src/cache/
-/cache/
+cache/*
+!cache/.gitkeep
