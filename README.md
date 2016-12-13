@@ -23,7 +23,7 @@ $cookies = serialize($fbScraper->getCookieJar());
 file_put_contents($cookieFilename, $cookies);
 ```
 
-After this is done - you can just load it and pass to the constructor:
+After it's done - you can just load it and pass to the constructor:
 
 ```php
 $cookieJar = unserialize(file_get_contents($cookieFilename));
