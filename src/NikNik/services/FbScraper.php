@@ -5,6 +5,7 @@ namespace NikNik\services;
 
 use Goutte\Client;
 use Symfony\Component\BrowserKit\CookieJar;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\DomCrawler\Form;
 
 
@@ -83,10 +84,10 @@ class FbScraper
     public function getUsername($id)
     {
         $pageResult =  $this->request('GET', self::FB_HOME . $id);
-        $username = str_replace(self::FB_HOME, '', $pageResult->crawler->getUri());
+        $username = $this->extractUserName($pageResult->crawler);
 
-        if (!$this->checkResponseCode($pageResult->response) || !$this->isUsername($username)) {
-            throw new \Exception('Error happens');
+        if (!$this->checkResponseCode($pageResult->response)) {
+            throw new \Exception("Error happens. Response code {$pageResult->response->getStatus()}");
         }
 
         if ($username === (string) $id) {
@@ -114,9 +115,7 @@ class FbScraper
      * @return bool
      */
     public function checkAuth() {
-        $loginPageResult = $this->request('GET', 'https://www.facebook.com/login/');
-
-        return !$this->isLoginPage($loginPageResult);
+        return $this->client->getCookieJar()->get('xs') !== null;
     }
 
     /**
@@ -178,6 +177,17 @@ class FbScraper
         return preg_match('/^[^\/\?]*$/', $username) === 1;
     }
 
+
+    /**
+     * @param $url
+     * @return int
+     */
+    protected function isProfilePage($url)
+    {
+        $res = preg_match('/profile\.php\?id=([0-9]+)$/', $url, $matches);
+        return $res === 1 ? $matches[1] : false;
+    }
+
     /**
      * @param $submitResult
      * @return bool
@@ -194,5 +204,29 @@ class FbScraper
     protected function isLoginPage(FbRequestResult $loginPageResult)
     {
         return !$this->checkResponseCode($loginPageResult->response) || $this->isLoginUri($loginPageResult);
+    }
+
+    /**
+     * @param Crawler $crawler
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function extractUserName(Crawler $crawler)
+    {
+        $str = str_replace(self::FB_HOME, '', $crawler->getUri());
+
+        if ($this->isUsername($str)) {
+            return $str;
+        }
+
+        if ($id = $this->isProfilePage($str)) {
+            return $id;
+        }
+
+        if (!$this->checkAuth()) {
+            throw new FbNotAuthorizedException();
+        }
+
+        throw new \Exception("Scraper redirected to wrong page");
     }
 }
